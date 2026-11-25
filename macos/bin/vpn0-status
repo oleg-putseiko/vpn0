@@ -1,0 +1,60 @@
+#!/bin/bash
+set -euo pipefail
+_vpn0_home() {
+  local src="${BASH_SOURCE[0]}"
+  while [[ -L "$src" ]]; do
+    local dir
+    dir="$(cd "$(dirname "$src")" && pwd)"
+    src="$(readlink "$src")"
+    [[ "$src" != /* ]] && src="$dir/$src"
+  done
+  cd "$(dirname "$src")/.." && pwd
+}
+VPN0_HOME="$(_vpn0_home)"
+export VPN0_HOME
+STATE_DIR="${VPN0_STATE_DIR:-$VPN0_HOME/state}"
+REPO_STATE="$(cd "$VPN0_HOME/.." && pwd)/state"
+LABEL="vpn0.singbox"
+STATE="$STATE_DIR/ks.state"
+VPS_IP=""
+if [[ -f "$STATE_DIR/vps.env" ]]; then
+  # shellcheck disable=SC1091
+  source "$STATE_DIR/vps.env" 2>/dev/null || true
+elif [[ -f "$REPO_STATE/vps.env" ]]; then
+  # shellcheck disable=SC1091
+  source "$REPO_STATE/vps.env" 2>/dev/null || true
+fi
+VPS_IP="${VPS_IP:-unknown}"
+
+echo -n "sing-box: "
+if launchctl print "system/${LABEL}" >/dev/null 2>&1; then
+  echo "up"
+else
+  echo "down"
+fi
+
+echo -n "killswitch: "
+if [[ -f "$STATE" ]]; then
+  cat "$STATE"
+else
+  echo "disarmed (HOME IP CAN LEAK)"
+fi
+
+echo -n "public_ip: "
+IP=""
+for url in https://api.ipify.org https://ifconfig.me https://icanhazip.com; do
+  IP="$(curl -4 -s --max-time 10 "$url" 2>/dev/null | tr -d '\r\n' || true)"
+  if [[ -n "$IP" ]]; then
+    break
+  fi
+done
+if [[ -n "$IP" ]]; then
+  echo "$IP"
+else
+  echo "(unreachable / blocked)"
+fi
+echo "expected_vps_ip: ${VPS_IP}"
+if pgrep -qf 'PacketTunnel' 2>/dev/null; then
+  echo "warn: another PacketTunnel is running — may steal default route"
+fi
+echo "commands: vpn0-on | vpn0-off | vpn0-reset | vpn0-direct | vpn0-install"

@@ -1,0 +1,32 @@
+#!/bin/bash
+set -euo pipefail
+_vpn0_home() {
+  local src="${BASH_SOURCE[0]}"
+  while [[ -L "$src" ]]; do
+    local dir
+    dir="$(cd "$(dirname "$src")" && pwd)"
+    src="$(readlink "$src")"
+    [[ "$src" != /* ]] && src="$dir/$src"
+  done
+  cd "$(dirname "$src")/.." && pwd
+}
+VPN0_HOME="$(_vpn0_home)"
+export VPN0_HOME
+ROOT="$VPN0_HOME/lib/vpn0-root.sh"
+OUT="/tmp/vpn0-root.out"
+echo "WARNING: this DISARMS the kill switch. Your home IP will be visible."
+echo "Type ALLOW-HOME-IP to continue:"
+read -r answer
+if [[ "$answer" != "ALLOW-HOME-IP" ]]; then
+  echo "Aborted."
+  exit 1
+fi
+if [[ "$(id -u)" -eq 0 ]]; then
+  "$ROOT" direct | tee "$OUT"
+else
+  osascript <<APPLESCRIPT
+do shell script "export PATH=/opt/homebrew/bin:/usr/sbin:/usr/bin:/sbin:/bin; VPN0_HOME=$(printf '%q' "$VPN0_HOME") $(printf '%q' "$ROOT") direct >$(printf '%q' "$OUT") 2>&1" with administrator privileges
+APPLESCRIPT
+  cat "$OUT"
+fi
+echo "Clearnet open. Re-arm with: vpn0-on"

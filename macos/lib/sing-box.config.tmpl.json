@@ -1,0 +1,76 @@
+{
+  "log": {
+    "level": "error",
+    "timestamp": true
+  },
+  "dns": {
+    "servers": [
+      {
+        "type": "https",
+        "tag": "remote-dns",
+        "server": "1.1.1.1",
+        "detour": "proxy"
+      },
+      {
+        "type": "https",
+        "tag": "remote-dns-backup",
+        "server": "8.8.8.8",
+        "detour": "proxy"
+      }
+    ],
+    "final": "remote-dns",
+    "strategy": "ipv4_only"
+  },
+  "inbounds": [
+    {
+      "type": "tun",
+      "tag": "tun-in",
+      "address": ["172.19.0.1/30"],
+      "auto_route": true,
+      "strict_route": true,
+      "stack": "system"
+    }
+  ],
+  "outbounds": [
+    {
+      "type": "vless",
+      "server": "{{VPS_IP}}",
+      "server_port": {{VPS_PORT}},
+      "uuid": "{{UUID}}",
+      "tls": {
+        "enabled": true,
+        "insecure": false,
+        "reality": {
+          "enabled": true,
+          "public_key": "{{REALITY_PUBLIC_KEY}}",
+          "short_id": "{{REALITY_SHORT_ID}}"
+        },
+        "server_name": "{{SNI}}",
+        "utls": {
+          "enabled": true,
+          "fingerprint": "chrome"
+        }
+      },
+      "flow": "xtls-rprx-vision",
+      "tag": "proxy"
+    },
+    {
+      "type": "direct",
+      "tag": "direct"
+    },
+    {
+      "type": "block",
+      "tag": "block"
+    }
+  ],
+  "route": {
+    "auto_detect_interface": true,
+    "default_domain_resolver": "remote-dns",
+    "final": "proxy",
+    "rules": [
+      { "action": "sniff" },
+      { "action": "hijack-dns", "protocol": "dns" },
+      { "action": "route", "ip_is_private": true, "outbound": "direct" }
+    ]
+  }
+}

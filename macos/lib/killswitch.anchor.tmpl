@@ -1,0 +1,42 @@
+# Fail-closed kill switch. Clearnet is blocked unless traffic goes via TUN
+# or to the VPS endpoint used to establish the tunnel.
+table <lan> persist { 10.0.0.0/8, 172.16.0.0/12, 192.168.0.0/16, 169.254.0.0/16, 127.0.0.0/8 }
+table <vps> persist { {{VPS_IP}} }
+
+pass quick on lo0 all
+
+# DHCP on physical links
+pass out quick proto udp from any port 68 to any port 67
+
+# Only the VPS is reachable without TUN (SSH + VLESS)
+pass out quick proto tcp to <vps> port { 22, 443 }
+pass out quick proto udp to <vps> port 443
+
+# sing-box TUN interfaces
+pass quick on utun0 all
+pass quick on utun1 all
+pass quick on utun2 all
+pass quick on utun3 all
+pass quick on utun4 all
+pass quick on utun5 all
+pass quick on utun6 all
+pass quick on utun7 all
+pass quick on utun8 all
+pass quick on utun9 all
+pass quick on utun10 all
+pass quick on utun11 all
+pass quick on utun12 all
+pass quick on utun13 all
+pass quick on utun14 all
+pass quick on utun15 all
+
+# Do not let DNS hit the LAN router / ISP resolver while armed
+block drop out quick proto { udp tcp } to <lan> port 53
+
+# LAN only (non-DNS)
+pass out quick inet to <lan>
+
+# Drop everything else (IPv4 + IPv6), including WebRTC/STUN/QUIC to the internet
+block drop out quick inet
+block drop out quick inet6
+block drop in quick inet from ! <lan> to ! <lan>
