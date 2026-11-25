@@ -1,0 +1,26 @@
+# Local secrets and rendered runtime state (never commit)
+/state/**
+!/state/.gitkeep
+/macos/state/**
+!/macos/state/.gitkeep
+
+# Logs / pid / temp
+*.log
+*.pid
+.DS_Store
+
+# Editor
+.idea/
+.vscode/
+*.swp
+
+# Accidentally copied legacy secrets
+credentials.txt
+vless.txt
+**/marzban-admin.txt
+**/vless.url
+**/vps.env
+**/sing-box.config.json
+**/killswitch.anchor
+**/dns.state
+**/ks.state
