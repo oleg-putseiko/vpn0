@@ -18,7 +18,12 @@ APPLESCRIPT
   cat "$OUT" 2>/dev/null || true
 fi
 
-for cmd in vpn0-on vpn0-off vpn0-reset vpn0-direct vpn0-status vpn0-install vpn0-test; do
+# Stop IP journal watcher if present
+if [[ -x "$MACOS_DIR/bin/vpn0-journal" ]]; then
+  "$MACOS_DIR/bin/vpn0-journal" off 2>/dev/null || true
+fi
+
+for cmd in vpn0-on vpn0-off vpn0-reset vpn0-direct vpn0-status vpn0-install vpn0-journal vpn0-test; do
   rm -f "$BIN_DIR/$cmd"
 done
 

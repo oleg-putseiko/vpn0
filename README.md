@@ -33,7 +33,7 @@ vpn0-test   # run in Terminal; admin prompts expected
 
 ## Commands (macOS)
 
-`vpn0-on` · `vpn0-off` · `vpn0-reset` · `vpn0-direct` · `vpn0-status` · `vpn0-test` · `vpn0-install`
+`vpn0-on` · `vpn0-off` · `vpn0-reset` · `vpn0-direct` · `vpn0-status` · `vpn0-journal` · `vpn0-test` · `vpn0-install`
 
 ## License
 

@@ -24,3 +24,7 @@ vless.txt
 **/killswitch.anchor
 **/dns.state
 **/ks.state
+**/ip-journal.log
+**/ip-journal.last
+**/journal-watch.stdout.log
+**/journal-watch.stderr.log

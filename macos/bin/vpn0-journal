@@ -1,0 +1,80 @@
+#!/bin/bash
+set -euo pipefail
+
+_vpn0_home() {
+  local src="${BASH_SOURCE[0]}"
+  while [[ -L "$src" ]]; do
+    local dir
+    dir="$(cd "$(dirname "$src")" && pwd)"
+    src="$(readlink "$src")"
+    [[ "$src" != /* ]] && src="$dir/$src"
+  done
+  cd "$(dirname "$src")/.." && pwd
+}
+
+VPN0_HOME="$(_vpn0_home)"
+export VPN0_HOME
+STATE_DIR="${VPN0_STATE_DIR:-$VPN0_HOME/state}"
+# shellcheck source=../lib/vpn0-journal-lib.sh
+source "$VPN0_HOME/lib/vpn0-journal-lib.sh"
+vpn0_journal_paths
+
+LABEL="ai.vpn0.journal"
+PLIST_DIR="${HOME}/Library/LaunchAgents"
+PLIST_PATH="${PLIST_DIR}/${LABEL}.plist"
+WATCH_SH="$VPN0_HOME/lib/vpn0-journal-watch.sh"
+UID_NUM="$(id -u)"
+DOMAIN="gui/${UID_NUM}"
+
+usage() {
+  echo "usage: vpn0-journal on|off|status|tail" >&2
+  exit 2
+}
+
+cmd="${1:-}"
+case "$cmd" in
+  on)
+    mkdir -p "$PLIST_DIR" "$STATE_DIR"
+    sed \
+      -e "s|{{WATCH_SH}}|${WATCH_SH}|g" \
+      -e "s|{{VPN0_HOME}}|${VPN0_HOME}|g" \
+      -e "s|{{STATE_DIR}}|${STATE_DIR}|g" \
+      "$VPN0_HOME/lib/ai.vpn0.journal.plist.tmpl" > "$PLIST_PATH"
+    launchctl bootout "$DOMAIN" "$PLIST_PATH" 2>/dev/null || true
+    launchctl bootstrap "$DOMAIN" "$PLIST_PATH"
+    launchctl enable "${DOMAIN}/${LABEL}" 2>/dev/null || true
+    # Seed last IP immediately
+    vpn0_journal_watch_once || true
+    echo "vpn0-journal: watching (every 20s)"
+    echo "  log: $VPN0_JOURNAL_LOG"
+    echo "  plist: $PLIST_PATH"
+    ;;
+  off)
+    launchctl bootout "$DOMAIN" "$PLIST_PATH" 2>/dev/null || true
+    rm -f "$PLIST_PATH"
+    echo "vpn0-journal: stopped"
+    ;;
+  status)
+    echo -n "agent: "
+    if launchctl print "${DOMAIN}/${LABEL}" >/dev/null 2>&1; then
+      echo "running"
+    else
+      echo "stopped"
+    fi
+    echo "log: $VPN0_JOURNAL_LOG"
+    if [[ -f "$VPN0_JOURNAL_LAST" ]]; then
+      echo "last_ip: $(tr -d '\r\n' < "$VPN0_JOURNAL_LAST")"
+    else
+      echo "last_ip: (none)"
+    fi
+    if [[ -f "$VPN0_JOURNAL_LOG" ]]; then
+      echo "last_lines:"
+      tail -n 5 "$VPN0_JOURNAL_LOG" | sed 's/^/  /'
+    fi
+    ;;
+  tail)
+    touch "$VPN0_JOURNAL_LOG"
+    exec tail -n 50 -f "$VPN0_JOURNAL_LOG"
+    ;;
+  *) usage ;;
+esac

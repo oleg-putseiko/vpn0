@@ -275,14 +275,39 @@ allow_direct() {
   echo "direct: kill switch disarmed — HOME IP CAN LEAK (reboot re-arms from disk)"
 }
 
+journal_after() {
+  local event="$1"
+  # shellcheck source=vpn0-journal-lib.sh
+  if [[ -f "$VPN0_HOME/lib/vpn0-journal-lib.sh" ]]; then
+    # shellcheck disable=SC1091
+    source "$VPN0_HOME/lib/vpn0-journal-lib.sh"
+    vpn0_journal_log_command "$event" || true
+  fi
+}
+
 cmd="${1:-}"
 case "$cmd" in
-  start) start_vpn ;;
-  stop) stop_vpn ;;
-  reset) recover_failclosed ;;
-  crash) kill_tunnel_keep_ks ;;
+  start)
+    start_vpn
+    journal_after vpn0-on
+    ;;
+  stop)
+    stop_vpn
+    journal_after vpn0-off
+    ;;
+  reset)
+    recover_failclosed
+    journal_after vpn0-reset
+    ;;
+  crash)
+    kill_tunnel_keep_ks
+    journal_after vpn0-crash
+    ;;
   arm) arm_killswitch ;;
-  direct) allow_direct ;;
+  direct)
+    allow_direct
+    journal_after vpn0-direct
+    ;;
   install) install_boot_killswitch ;;
   uninstall-boot) uninstall_boot_killswitch ;;
   *)

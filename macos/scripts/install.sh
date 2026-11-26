@@ -126,7 +126,7 @@ EOF
 chmod 600 "$STATE_MAC/vps.env" "$STATE_MAC/sing-box.config.json" "$STATE_MAC/killswitch.anchor"
 
 # Symlink CLIs
-for cmd in vpn0-on vpn0-off vpn0-reset vpn0-direct vpn0-status vpn0-install; do
+for cmd in vpn0-on vpn0-off vpn0-reset vpn0-direct vpn0-status vpn0-install vpn0-journal; do
   ln -sfn "$MACOS_DIR/bin/$cmd" "$BIN_DIR/$cmd"
 done
 ln -sfn "$MACOS_DIR/test/vpn0-test.sh" "$BIN_DIR/vpn0-test"
