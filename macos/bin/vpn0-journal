@@ -14,7 +14,6 @@ _vpn0_home() {
 
 VPN0_HOME="$(_vpn0_home)"
 export VPN0_HOME
-STATE_DIR="${VPN0_STATE_DIR:-$VPN0_HOME/state}"
 # shellcheck source=../lib/vpn0-journal-lib.sh
 source "$VPN0_HOME/lib/vpn0-journal-lib.sh"
 vpn0_journal_paths
@@ -34,16 +33,16 @@ usage() {
 cmd="${1:-}"
 case "$cmd" in
   on)
-    mkdir -p "$PLIST_DIR" "$STATE_DIR"
+    mkdir -p "$PLIST_DIR" "$VPN0_JOURNAL_DIR"
     sed \
       -e "s|{{WATCH_SH}}|${WATCH_SH}|g" \
       -e "s|{{VPN0_HOME}}|${VPN0_HOME}|g" \
-      -e "s|{{STATE_DIR}}|${STATE_DIR}|g" \
+      -e "s|{{JOURNAL_DIR}}|${VPN0_JOURNAL_DIR}|g" \
       "$VPN0_HOME/lib/ai.vpn0.journal.plist.tmpl" > "$PLIST_PATH"
     launchctl bootout "$DOMAIN" "$PLIST_PATH" 2>/dev/null || true
     launchctl bootstrap "$DOMAIN" "$PLIST_PATH"
     launchctl enable "${DOMAIN}/${LABEL}" 2>/dev/null || true
-    # Seed last IP immediately
+    # Seed last IP immediately (no alert on init)
     vpn0_journal_watch_once || true
     echo "vpn0-journal: watching (every 20s)"
     echo "  log: $VPN0_JOURNAL_LOG"

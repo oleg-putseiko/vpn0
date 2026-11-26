@@ -30,9 +30,9 @@ Symlinks `vpn0-*` into `~/bin`. Ensure `export PATH="$HOME/bin:$PATH"`.
 ## IP journal
 
 - **A (commands):** `vpn0-on` / `off` / `reset` / `direct` append a line after each action.
-- **B (flicker):** `vpn0-journal on` starts a user LaunchAgent (every 20s); IP changes are logged as `flicker`.
+- **B (flicker):** `vpn0-journal on` starts a user LaunchAgent (every 20s); IP changes are logged as `flicker` and raise a native English notification.
 
-Log: `macos/state/ip-journal.log` (gitignored). Timestamps are local ISO-8601 with timezone (`%Y-%m-%dT%H:%M:%S%z`).
+Log: `~/.vpn0/ip-journal.log`. Timestamps are local ISO-8601 with timezone (`%Y-%m-%dT%H:%M:%S%z`).
 
 ```bash
 vpn0-journal on
